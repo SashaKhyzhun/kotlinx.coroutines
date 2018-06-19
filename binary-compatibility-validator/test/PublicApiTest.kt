@@ -76,6 +76,11 @@ class PublicApiTest {
     }
 
     @Test
+    fun kotlinxCoroutinesSlf4j() {
+        snapshotAPIAndCompare("integration/kotlinx-coroutines-slf4j")
+    }
+
+    @Test
     fun kotlinxCoroutinesAndroid() {
         snapshotAPIAndCompare("ui/kotlinx-coroutines-android")
     }

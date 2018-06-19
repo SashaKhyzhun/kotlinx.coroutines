@@ -14,7 +14,6 @@ dependencies {
     testArtifacts project(':kotlinx-coroutines-core')
     testArtifacts project(':kotlinx-coroutines-io')
 
-
     testArtifacts project(':kotlinx-coroutines-reactive')
     testArtifacts project(':kotlinx-coroutines-reactor')
     testArtifacts project(':kotlinx-coroutines-rx1')
@@ -24,6 +23,7 @@ dependencies {
     testArtifacts project(':kotlinx-coroutines-jdk8')
     testArtifacts project(':kotlinx-coroutines-nio')
     testArtifacts project(':kotlinx-coroutines-quasar')
+    testArtifacts project(':kotlinx-coroutines-slf4j')
 
     testArtifacts project(':kotlinx-coroutines-android')
     testArtifacts project(':kotlinx-coroutines-javafx')
