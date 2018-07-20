@@ -44,7 +44,12 @@ task jdk16Test(type: Test, dependsOn: [testClasses, checkJdk16]) {
     exclude '**/*CancellableContinuationExceptionHandlingTest.*'
 }
 
-task moreTest(dependsOn: [lockFreedomTest, jdk16Test])
+task schedulerTest(type: Test, dependsOn: testClasses) {
+    systemProperty 'kotlinx.coroutines.scheduler', ''
+    systemProperty 'kotlinx.coroutines.scheduler.keep.alive.sec', '100000' // any unpark problem hangs test
+}
+
+task moreTest(dependsOn: [lockFreedomTest, jdk16Test, schedulerTest])
 
 build.dependsOn moreTest
 

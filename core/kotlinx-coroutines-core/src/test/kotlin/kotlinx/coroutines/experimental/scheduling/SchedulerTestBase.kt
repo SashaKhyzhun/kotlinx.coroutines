@@ -2,12 +2,13 @@ package kotlinx.coroutines.experimental.scheduling
 
 import kotlinx.atomicfu.*
 import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.internal.*
 import org.junit.*
 import kotlin.coroutines.experimental.*
 
 abstract class SchedulerTestBase : TestBase() {
     companion object {
-        val CORES_COUNT = Runtime.getRuntime().availableProcessors()
+        val CORES_COUNT = AVAILABLE_PROCESSORS
 
         /**
          * Asserts that [expectedThreadsCount] pool worker threads were created.
