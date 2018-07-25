@@ -21,6 +21,11 @@ jar {
 }
 
 test {
-    classpath = files(configurations.testRuntime, atomicFU.outputs, sourceSets.test.output.classesDirs,
-            sourceSets.main.output.resourcesDir)
+    classpath = files(
+        configurations.testRuntime,
+        atomicFU.outputs,
+        sourceSets.main.output.resourcesDir,
+        sourceSets.test.output.classesDirs,
+        sourceSets.test.output.resourcesDir
+    )
 }

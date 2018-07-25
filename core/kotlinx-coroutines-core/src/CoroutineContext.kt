@@ -4,6 +4,7 @@
 
 package kotlinx.coroutines.experimental
 
+import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.experimental.AbstractCoroutineContextElement
 import kotlin.coroutines.experimental.ContinuationInterceptor
@@ -37,6 +38,17 @@ internal val DEBUG = run {
         DEBUG_PROPERTY_VALUE_ON, "" -> true
         DEBUG_PROPERTY_VALUE_OFF -> false
         else -> error("System property '$DEBUG_PROPERTY_NAME' has unrecognized value '$value'")
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+internal val coroutineContextThreadLocal: CoroutineContextThreadLocal<Any?>? = run {
+    val services = ServiceLoader.load(CoroutineContextThreadLocal::class.java).toMutableList()
+    if (DEBUG) services.add(0, DebugThreadName)
+    when (services.size) {
+        0 -> null
+        1 -> services.single() as CoroutineContextThreadLocal<Any?>
+        else -> CoroutineContextThreadLocalList((services as List<CoroutineContextThreadLocal<Any?>>).toTypedArray())
     }
 }
 
@@ -89,29 +101,37 @@ public actual fun newCoroutineContext(context: CoroutineContext, parent: Job? = 
  * Executes a block using a given coroutine context.
  */
 internal actual inline fun <T> withCoroutineContext(context: CoroutineContext, block: () -> T): T {
-    val oldName = context.updateThreadContext()
+    val oldValue = coroutineContextThreadLocal?.updateThreadContext(context)
     try {
         return block()
     } finally {
-        restoreThreadContext(oldName)
+        coroutineContextThreadLocal?.restoreThreadContext(context, oldValue)
     }
 }
 
-@PublishedApi
-internal fun CoroutineContext.updateThreadContext(): String? {
-    if (!DEBUG) return null
-    val coroutineId = this[CoroutineId] ?: return null
-    val coroutineName = this[CoroutineName]?.name ?: "coroutine"
-    val currentThread = Thread.currentThread()
-    val oldName = currentThread.name
-    currentThread.name = buildString(oldName.length + coroutineName.length + 10) {
-        append(oldName)
-        append(" @")
-        append(coroutineName)
-        append('#')
-        append(coroutineId.id)
+private const val DEBUG_THREAD_NAME_SEPARATOR = " @"
+
+private object DebugThreadName : CoroutineContextThreadLocal<String?> {
+    override fun updateThreadContext(context: CoroutineContext): String? {
+        val coroutineId = context[CoroutineId] ?: return null
+        val coroutineName = context[CoroutineName]?.name ?: "coroutine"
+        val currentThread = Thread.currentThread()
+        val oldName = currentThread.name
+        var lastIndex = oldName.lastIndexOf(DEBUG_THREAD_NAME_SEPARATOR)
+        if (lastIndex < 0) lastIndex = oldName.length
+        currentThread.name = buildString(lastIndex + coroutineName.length + 10) {
+            append(oldName.substring(0, lastIndex))
+            append(DEBUG_THREAD_NAME_SEPARATOR)
+            append(coroutineName)
+            append('#')
+            append(coroutineId.id)
+        }
+        return oldName
     }
-    return oldName
+
+    override fun restoreThreadContext(context: CoroutineContext, oldValue: String?) {
+        if (oldValue != null) Thread.currentThread().name = oldValue
+    }
 }
 
 internal actual val CoroutineContext.coroutineName: String? get() {
@@ -121,12 +141,7 @@ internal actual val CoroutineContext.coroutineName: String? get() {
     return "$coroutineName#${coroutineId.id}"
 }
 
-@PublishedApi
-internal fun restoreThreadContext(oldName: String?) {
-    if (oldName != null) Thread.currentThread().name = oldName
-}
-
-private class CoroutineId(val id: Long) : AbstractCoroutineContextElement(CoroutineId) {
+internal data class CoroutineId(val id: Long) : AbstractCoroutineContextElement(CoroutineId) {
     companion object Key : CoroutineContext.Key<CoroutineId>
     override fun toString(): String = "CoroutineId($id)"
 }

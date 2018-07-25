@@ -431,7 +431,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
                 // already complete -- select result
                 if (select.trySelect(null)) {
                     select.completion.context.checkCompletion() // always check for our completion
-                    block.startCoroutineUndispatched(select.completion)
+                    block.startCoroutineUnintercepted(select.completion)
                 }
                 return
             }
@@ -803,7 +803,7 @@ internal open class JobSupport constructor(active: Boolean) : Job, SelectClause0
                     if (state is CompletedExceptionally)
                         select.resumeSelectCancellableWithException(state.cause)
                     else
-                        block.startCoroutineUndispatched(state as T, select.completion)
+                        block.startCoroutineUnintercepted(state as T, select.completion)
                 }
                 return
             }
